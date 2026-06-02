@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: compasu-mongodb
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: compasu
+      MONGO_INITDB_ROOT_PASSWORD: compasu123
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - compasu-network
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: compasu-backend
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://compasu:compasu123@mongodb:27017/compasu?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-key-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-refresh-secret-key}
+      CLIENT_URL: http://localhost:5173
+    depends_on:
+      - mongodb
+    networks:
+      - compasu-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: compasu-frontend
+    ports:
+      - '5173:5173'
+    environment:
+      VITE_API_URL: http://backend:5000/api/v1
+      VITE_SOCKET_URL: http://backend:5000
+    depends_on:
+      - backend
+    networks:
+      - compasu-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  compasu-network:
+    driver: bridge

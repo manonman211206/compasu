@@ -1,0 +1,30 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main, production-ready-development]
+  pull_request:
+    branches: [main, production-ready-development]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: client/package-lock.json
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+      - name: Run linter
+        working-directory: client
+        run: npm run lint --if-present
+      - name: Build
+        working-directory: client
+        run: npm run build
+      - name: Run tests
+        working-directory: client
+        run: npm test --if-present
