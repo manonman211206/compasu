@@ -4,7 +4,14 @@ const hpp = require('hpp');
 
 const securityMiddleware = (app) => {
   app.use(helmet());
-  app.use(mongoSanitize());
+
+  // Express 5 safe mongoSanitize middleware
+  app.use((req, res, next) => {
+    if (req.body) mongoSanitize.sanitize(req.body);
+    if (req.params) mongoSanitize.sanitize(req.params);
+    next();
+  });
+
   app.use(hpp());
 
   app.use((req, res, next) => {

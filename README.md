@@ -127,29 +127,8 @@ VITE_SOCKET_URL=http://localhost:5000
 ## 🏗️ Project Structure
 
 ```
-compasu/
-├── server/
-│   ├── src/
-│   │   ├── models/          # Database models
-│   │   ├── routes/          # API routes (v1)
-│   │   ├── services/        # Business logic
-│   │   ├── middleware/      # Express middleware
-│   │   ├── utils/           # Utility functions
-│   │   └── config/          # Configuration
-│   ├── server.js            # Entry point
-│   ├── package.json
-│   └── .env.example
-├── client/
-│   ├── src/
-│   │   ├── pages/           # Page components
-│   │   ├── components/      # Reusable components
-│   │   ├── store/           # Redux store
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── package.json
-│   └── .env.example
-└── docker-compose.yml
-```
+
+
 
 ## 🔐 Security Features
 

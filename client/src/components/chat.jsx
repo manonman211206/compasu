@@ -15,13 +15,13 @@ export default function Chat({ username }) {
         author: username || "Student",
         message: currentMessage,
         // Grabs the current hour and minute for the timestamp
-        time: new Date(Date.now()).getHours() + ":" + 
-              new Date(Date.now()).getMinutes().toString().padStart(2, '0'),
+        time: new Date(Date.now()).getHours() + ":" +
+          new Date(Date.now()).getMinutes().toString().padStart(2, '0'),
       };
 
       // 1. Emit the message to the backend server
       await socket.emit("send_message", messageData);
-      
+
       // 2. Add the message to your own screen instantly
       setMessageList((list) => [...list, messageData]);
       setCurrentMessage(""); // Clear the input box
@@ -35,14 +35,14 @@ export default function Chat({ username }) {
     };
 
     socket.on("receive_message", receiveMessageHandler);
-    
+
     // Cleanup the listener when the component unmounts so messages don't duplicate
     return () => socket.off("receive_message", receiveMessageHandler);
   }, []);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[500px]">
-      
+
       {/* Chat Header */}
       <div className="bg-blue-600 text-white p-4 rounded-t-xl font-bold flex justify-between items-center">
         <span>Campus Global Chat</span>
@@ -60,16 +60,15 @@ export default function Chat({ username }) {
           </div>
         ) : (
           messageList.map((msg, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`flex flex-col ${msg.author === username ? 'items-end' : 'items-start'}`}
             >
-              <div 
-                className={`p-3 rounded-lg max-w-[75%] shadow-sm ${
-                  msg.author === username 
-                    ? 'bg-blue-600 text-white rounded-br-none' 
+              <div
+                className={`p-3 rounded-lg max-w-[75%] shadow-sm ${msg.author === username
+                    ? 'bg-blue-600 text-white rounded-br-none'
                     : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
-                }`}
+                  }`}
               >
                 <p className="font-bold text-[10px] uppercase tracking-wider mb-1 opacity-70">
                   {msg.author === username ? 'You' : msg.author}
@@ -92,14 +91,14 @@ export default function Chat({ username }) {
           onKeyPress={(event) => event.key === "Enter" && sendMessage()}
           className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
         />
-        <button 
+        <button
           onClick={sendMessage}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition active:scale-95 shadow-sm"
         >
           Send
         </button>
       </div>
-      
+
     </div>
   );
 }

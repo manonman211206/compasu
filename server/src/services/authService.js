@@ -1,8 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../../models/User');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../utils/email');
 
 class AuthService {
   async register(username, email, password, confirmPassword) {
@@ -35,6 +36,11 @@ class AuthService {
     await user.save();
 
     logger.info(`New user registered: ${email}`);
+
+    // Send verification email asynchronously
+    sendVerificationEmail(user.email, emailVerificationToken).catch((err) =>
+      logger.error('Background verification email failed: ' + err.message)
+    );
 
     return {
       id: user._id,
@@ -159,9 +165,13 @@ class AuthService {
 
     logger.info(`Password reset requested for: ${email}`);
 
+    // Send password reset email asynchronously
+    sendPasswordResetEmail(user.email, resetToken).catch((err) =>
+      logger.error('Background password reset email failed: ' + err.message)
+    );
+
     return {
       message: 'If user exists, reset email has been sent',
-      resetToken, // In production, send via email
     };
   }
 

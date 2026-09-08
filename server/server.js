@@ -16,20 +16,7 @@ const io = new Server(server, {
   },
 });
 
-// Security & Utility Middleware
-const securityMiddleware = require('./src/middleware/security');
-const errorHandler = require('./src/middleware/errorHandler');
-const { apiLimiter } = require('./src/middleware/rateLimiter');
-const logger = require('./src/utils/logger');
-
-securityMiddleware(app);
-
-// Body Parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cookieParser());
-
-// CORS
+// CORS (must be before routes & security to handle OPTIONS preflight)
 app.use(
   cors({
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -37,6 +24,19 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
+
+// Body Parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(cookieParser());
+
+// Security & Utility Middleware
+const securityMiddleware = require('./src/middleware/security');
+const errorHandler = require('./src/middleware/errorHandler');
+const { apiLimiter } = require('./src/middleware/rateLimiter');
+const logger = require('./src/utils/logger');
+
+securityMiddleware(app);
 
 // Rate Limiting
 app.use('/api/', apiLimiter);
@@ -133,6 +133,48 @@ io.on('connection', (socket) => {
     });
 
     logger.info(`Location updated for user ${userId}`);
+  });
+
+  // Meeting Point Events
+  socket.on('set_meeting_point', (data) => {
+    io.emit('meeting_point_set', {
+      ...data,
+      timestamp: new Date(),
+    });
+    logger.info(`Meeting point broadcast: [${data.latitude}, ${data.longitude}] by ${data.createdBy?.username || data.userId || 'User'}`);
+  });
+
+  socket.on('clear_meeting_point', (data) => {
+    io.emit('meeting_point_cleared', {
+      ...data,
+      timestamp: new Date(),
+    });
+    logger.info(`Meeting point cleared broadcast by ${data?.userId || 'User'}`);
+  });
+
+  // Friend Request & Notification Events
+  socket.on('send_friend_request', (data) => {
+    const { senderId, recipientId, senderName } = data;
+    const recipientSocketId = onlineUsers.get(recipientId);
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('friend_request_received', {
+        senderId,
+        senderName,
+        timestamp: new Date(),
+      });
+    }
+  });
+
+  socket.on('accept_friend_request', (data) => {
+    const { senderId, recipientId, recipientName } = data;
+    const senderSocketId = onlineUsers.get(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit('friend_request_accepted', {
+        recipientId,
+        recipientName,
+        timestamp: new Date(),
+      });
+    }
   });
 
   // Disconnect

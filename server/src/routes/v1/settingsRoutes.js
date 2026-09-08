@@ -5,6 +5,16 @@ const { authenticateToken } = require('../../middleware/auth');
 const asyncHandler = require('../../utils/asyncHandler');
 const { sendSuccessResponse, sendErrorResponse } = require('../../utils/response');
 const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 router.use(authenticateToken);
 
@@ -30,6 +40,32 @@ router.put(
     ).select('-password -refreshTokens -emailVerificationToken -passwordResetToken');
 
     sendSuccessResponse(res, user, 200);
+  })
+);
+
+router.post(
+  '/avatar',
+  upload.single('avatar'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return sendErrorResponse(res, 'No image file provided', 400);
+    }
+
+    const b64 = Buffer.from(req.file.buffer).toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'compasu_avatars',
+      transformation: [{ width: 300, height: 300, crop: 'fill' }],
+    });
+
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { profilePicture: result.secure_url },
+      { new: true }
+    ).select('-password -refreshTokens -emailVerificationToken -passwordResetToken');
+
+    sendSuccessResponse(res, { profilePicture: result.secure_url, user }, 200);
   })
 );
 

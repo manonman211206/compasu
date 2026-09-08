@@ -66,4 +66,44 @@ router.get(
   })
 );
 
-module.exports = router;
+// --- Meeting Point Routes ---
+router.post(
+  '/meeting-point',
+  asyncHandler(async (req, res) => {
+    const { latitude, longitude, title, address, description, groupId } = req.body;
+    if (latitude === undefined || longitude === undefined) {
+      return sendErrorResponse(res, 'Latitude and longitude are required for meeting point', 400);
+    }
+
+    const result = await locationService.setMeetingPoint(
+      req.userId,
+      parseFloat(latitude),
+      parseFloat(longitude),
+      title,
+      address,
+      description,
+      groupId
+    );
+    sendSuccessResponse(res, result, 201);
+  })
+);
+
+router.get(
+  '/meeting-point/active',
+  asyncHandler(async (req, res) => {
+    const { groupId = 'default-campus-session' } = req.query;
+    const result = await locationService.getActiveMeetingPoint(groupId);
+    sendSuccessResponse(res, result, 200);
+  })
+);
+
+router.delete(
+  '/meeting-point/active',
+  asyncHandler(async (req, res) => {
+    const { groupId = 'default-campus-session' } = req.query;
+    const result = await locationService.clearMeetingPoint(groupId);
+    sendSuccessResponse(res, result, 200);
+  })
+);
+
+module.exports = router;

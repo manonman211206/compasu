@@ -1,4 +1,5 @@
 const Message = require('../models/Message');
+const mongoose = require('mongoose');
 const logger = require('../utils/logger');
 
 class ChatService {
@@ -96,12 +97,13 @@ class ChatService {
   }
 
   async getConversationList(userId) {
+    const userObjId = new mongoose.Types.ObjectId(userId);
     const conversations = await Message.aggregate([
       {
         $match: {
           $or: [
-            { senderId: require('mongoose').Types.ObjectId(userId) },
-            { recipientId: require('mongoose').Types.ObjectId(userId) },
+            { senderId: userObjId },
+            { recipientId: userObjId },
           ],
         },
       },
@@ -112,7 +114,7 @@ class ChatService {
         $group: {
           _id: {
             $cond: [
-              { $eq: ['$senderId', require('mongoose').Types.ObjectId(userId)] },
+              { $eq: ['$senderId', userObjId] },
               '$recipientId',
               '$senderId',
             ],
@@ -124,7 +126,7 @@ class ChatService {
               $cond: [
                 {
                   $and: [
-                    { $eq: ['$recipientId', require('mongoose').Types.ObjectId(userId)] },
+                    { $eq: ['$recipientId', userObjId] },
                     { $eq: ['$isRead', false] },
                   ],
                 },

@@ -1,6 +1,6 @@
 // client/src/components/Dashboard.jsx
 import React, { useState } from 'react';
-import Chat from './Chat'; 
+import Chat from './chat'; 
 
 export default function Dashboard({ handleLogout }) {
   const [activeTab, setActiveTab] = useState('map'); // 'chat' or 'map'

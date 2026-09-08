@@ -1,55 +1,86 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Landing from './components/Landing';
+import { useSelector, useDispatch } from 'react-redux';
+import Landing from './Landing';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
+import { logout } from './store/authSlice';
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }) => {
+  const reduxToken = useSelector((state) => state.auth.token);
+  const token = reduxToken || localStorage.getItem('token');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+// Public route wrapper (redirects to dashboard if already logged in)
+const PublicAuthRoute = ({ children }) => {
+  const reduxToken = useSelector((state) => state.auth.token);
+  const token = reduxToken || localStorage.getItem('token');
+
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(false);
-  }, []);
+  const dispatch = useDispatch();
 
   const handleLogout = () => {
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    dispatch(logout());
   };
-
-  if (loading) {
-    return (
-      <div className="h-screen bg-gradient-to-br from-slate-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-300">Loading Compasu...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        {/* Public Landing */}
         <Route path="/" element={<Landing />} />
+
+        {/* Auth Routes */}
         <Route
           path="/login"
-          element={token ? <Navigate to="/dashboard" replace /> : <Signup />}
+          element={
+            <PublicAuthRoute>
+              <Signup initialMode="login" />
+            </PublicAuthRoute>
+          }
         />
         <Route
           path="/signup"
-          element={token ? <Navigate to="/dashboard" replace /> : <Signup />}
+          element={
+            <PublicAuthRoute>
+              <Signup initialMode="signup" />
+            </PublicAuthRoute>
+          }
         />
 
-        {/* Protected Routes */}
+        {/* Protected Application Routes */}
         <Route
           path="/dashboard"
-          element={token ? <Dashboard handleLogout={handleLogout} /> : <Navigate to="/login" replace />}
+          element={
+            <ProtectedRoute>
+              <Dashboard handleLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings handleLogout={handleLogout} />
+            </ProtectedRoute>
+          }
         />
 
-        {/* Catch all */}
+        {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
